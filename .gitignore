@@ -16,6 +16,7 @@ lerna-debug.log*
 # Local unused files
 test.js
 database/*.json
+**/hosts/*
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 
