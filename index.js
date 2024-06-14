@@ -54,17 +54,15 @@ function defaultUsersData(username, chatId) {
 /**
  * Saves the user state to the userState.json file.
  *
- * This function reads the userState object, converts it to a JSON string,
- * and writes it to the userState.json file. The userState object contains
- * the state of the bot for each user, including their message ID, state,
- * and any other relevant data.
+ * This function writes the userState object directly to the userState.json
+ * file. The userState object contains the state of the bot for each user,
+ * including their message ID, state, and any other relevant data.
  */
 function saveUserState() {
-    // Convert the userState object to a JSON string
-    const userStateJSON = JSON.stringify(userState);
-
-    // Write the JSON string to the userState.json file
-    fs.writeFileSync('./database/userState.json', userStateJSON);
+    fs.writeFileSync(
+        './database/userState.json',
+        JSON.stringify(userState, null, 2),
+    );
 }
 
 bot.onText(/\/start/, msg => {
