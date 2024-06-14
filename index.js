@@ -3,6 +3,7 @@ const TeleBot = require('node-telegram-bot-api');
 const fs = require('fs');
 const utils = require('./utils');
 const path = require('path');
+delete require.cache[require.resolve('./database/users.json')];
 
 const bot = new TeleBot(process.env.TOKEN, { polling: true });
 let userState = {};
@@ -181,14 +182,16 @@ Do you want to add this host?`,
 
 bot.onText(/\/remove/, msg => {
     const chatId = msg.chat.id;
+    const [command, hostName] = msg.text.split(' ');
+    console.log(`Command: ${command}, Host Name: ${hostName}`);
 
-    if (utils.isHostOnUser(msg.from.username, msg.text)) {
+    if (!utils.isHostOnUser(msg.from.username, msg.text)) {
         bot.sendPhoto(chatId, './assets/banner.png', {
             caption: `
             *• Remove Host •*
 ━━━━━━━━━━━━━━━━━━
 
-Host Name: ${msg.text}
+Host Name: *${hostName}*
 
 ━━━━━━━━━━━━━━━━━━
 
@@ -209,6 +212,14 @@ Do you want to remove this host?`,
                 ],
             },
         });
+
+        userState[chatId] = {
+            state: 'WAITING_HOST_REMOVE',
+            data: {
+                hostName: hostName,
+            },
+        };
+        saveUserState();
     } else {
         return bot.sendPhoto(chatId, './assets/banner.png', {
             caption: `Host are not on your list, check again using button below.`,
@@ -412,26 +423,74 @@ Please enter the host name you want to add.
             });
             break;
         }
+        case 'removeHost': {
+            const hostName = userState[chatId].data.hostName;
+
+            if (!hostName) {
+                return bot.sendMessage(
+                    chatId,
+                    'Something went wrong. Please try again.',
+                );
+            }
+
+            const users = JSON.parse(
+                fs.readFileSync('./database/users.json', 'utf-8'),
+            );
+            const hostFolder = './database/hosts/';
+
+            if (!fs.existsSync(`${hostFolder}${hostName}.txt`)) {
+                return bot.sendMessage(chatId, 'Host not found.');
+            }
+
+            users[query.from.username].hostList = users[
+                query.from.username
+            ].hostList.filter(host => host !== hostName);
+
+            fs.unlinkSync(`${hostFolder}${hostName}.txt`);
+            fs.writeFileSync('./database/users.json', JSON.stringify(users));
+
+            bot.editMessageCaption(
+                `
+                *• Remove Host •*
+━━━━━━━━━━━━━━━━━━
+
+Host: ${hostName} has been removed successfully.
+
+━━━━━━━━━━━━━━━━━━
+                `,
+                {
+                    chat_id: chatId,
+                    message_id: query.message.message_id,
+                    parse_mode: 'Markdown',
+                    reply_markup: {
+                        inline_keyboard: defaultButton,
+                    },
+                },
+            );
+
+            bot.answerCallbackQuery(query.id, {
+                text: 'Host has been removed successfully.',
+            });
+            break;
+        }
         case 'host': {
             const [action, direction, page] = query.data.split('_');
-            let newPage = Number(page);
-            const totalPages = utils.getHostTotalPage(query.from.username);
+            let newPage = Math.max(
+                0,
+                Math.min(
+                    utils.getHostTotalPage(query.from.username) - 1,
+                    Number(page) + (direction === 'next' ? 1 : -1),
+                ),
+            );
 
-            if (direction === 'prev' && newPage > 0) {
-                newPage -= 1;
-            } else if (direction === 'next' && newPage < totalPages - 1) {
-                newPage += 1;
-            }
-
-            let message = `Hosts: Page (${newPage + 1} / ${totalPages + 1})\n`;
-
-            if (newPage !== Number(page)) {
-                const hosts = utils.getHostOnPage(query.from.username, newPage);
-
-                hosts.forEach((host, index) => {
-                    message += `${index + 1}. ${host}.txt\n`;
-                });
-            }
+            const hosts = utils.getHostOnPage(query.from.username, newPage);
+            const message =
+                `Hosts: Page (${newPage + 1} / ${utils.getHostTotalPage(
+                    query.from.username,
+                )})\n` +
+                hosts
+                    .map((host, index) => `${index + 1}. ${host}.txt\n`)
+                    .join('');
 
             bot.editMessageCaption(
                 `
@@ -462,7 +521,11 @@ ${message}
                                 {
                                     text: 'Next',
                                     callback_data:
-                                        newPage < totalPages - 1
+                                        newPage <
+                                        utils.getHostTotalPage(
+                                            query.from.username,
+                                        ) -
+                                            1
                                             ? `host_next_${newPage}`
                                             : 'null',
                                 },
