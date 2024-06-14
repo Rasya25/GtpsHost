@@ -115,7 +115,7 @@ You can now use the bot feature by clicking the button below.
     }
 });
 
-bot.onText(/\/add/, msg => {
+bot.onText(/\/add/, async msg => {
     const chatId = msg.chat.id;
     const [command, hostName, hostAddress] = msg.text.split(' ');
 
@@ -126,14 +126,14 @@ bot.onText(/\/add/, msg => {
         );
     }
 
-    const databaseFile = fs.readFileSync('./database/users.json');
-
-    let users = JSON.parse(databaseFile);
+    const users = JSON.parse(
+        await fs.promises.readFile('./database/users.json', 'utf-8'),
+    );
 
     // Check if the host already exists
     if (utils.isHostExist(hostName)) {
         return bot.sendMessage(chatId, 'Host already exists.');
-    } else if (users[msg.from.username].hostList.includes(hostName)) {
+    } else if (users[msg.from.username]?.hostList?.includes(hostName)) {
         return bot.sendMessage(
             chatId,
             'You already have a host with the same name.',
@@ -144,8 +144,8 @@ bot.onText(/\/add/, msg => {
     userState[chatId] = {
         state: 'WAITING_HOST_CONFIRMATION',
         data: {
-            hostName: hostName,
-            hostAddress: hostAddress,
+            hostName,
+            hostAddress,
         },
     };
     saveUserState();
@@ -180,13 +180,14 @@ Do you want to add this host?`,
     });
 });
 
-bot.onText(/\/remove/, msg => {
-    const chatId = msg.chat.id;
+bot.onText(/\/remove/, async msg => {
     const [command, hostName] = msg.text.split(' ');
-    console.log(`Command: ${command}, Host Name: ${hostName}`);
+    const chatId = msg.chat.id;
 
-    if (!utils.isHostOnUser(msg.from.username, msg.text)) {
-        bot.sendPhoto(chatId, './assets/banner.png', {
+    const isHostOnUser = await utils.isHostOnUser(msg.from.username, hostName);
+
+    if (!isHostOnUser) {
+        return bot.sendPhoto(chatId, './assets/banner.png', {
             caption: `
             *• Remove Host •*
 ━━━━━━━━━━━━━━━━━━
@@ -195,40 +196,48 @@ Host Name: *${hostName}*
 
 ━━━━━━━━━━━━━━━━━━
 
-Do you want to remove this host?`,
-            parse_mode: 'Markdown',
-            reply_markup: {
-                inline_keyboard: [
-                    [
-                        {
-                            text: 'Yes',
-                            callback_data: 'removeHost',
-                        },
-                        {
-                            text: 'No',
-                            callback_data: 'cancel',
-                        },
-                    ],
-                ],
-            },
-        });
-
-        userState[chatId] = {
-            state: 'WAITING_HOST_REMOVE',
-            data: {
-                hostName: hostName,
-            },
-        };
-        saveUserState();
-    } else {
-        return bot.sendPhoto(chatId, './assets/banner.png', {
-            caption: `Host are not on your list, check again using button below.`,
+Host are not on your list, check again using button below.`,
             parse_mode: 'Markdown',
             reply_markup: {
                 inline_keyboard: defaultButton,
             },
         });
     }
+
+    bot.sendPhoto(chatId, './assets/banner.png', {
+        caption: `
+            *• Remove Host •*
+━━━━━━━━━━━━━━━━━━
+
+Host Name: *${hostName}*
+
+━━━━━━━━━━━━━━━━━━
+
+Do you want to remove this host?`,
+        parse_mode: 'Markdown',
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    {
+                        text: 'Yes',
+                        callback_data: 'removeHost',
+                    },
+                    {
+                        text: 'No',
+                        callback_data: 'cancel',
+                    },
+                ],
+            ],
+        },
+    });
+
+    userState[chatId] = {
+        state: 'WAITING_HOST_REMOVE',
+        data: {
+            hostName: hostName,
+        },
+    };
+    saveUserState();
 });
 
 // TODO: Removing unsused callback_data
@@ -431,12 +440,28 @@ ${message}
             break;
         }
         case 'help': {
-            bot.sendMessage(chatId, 'Help');
+            bot.editMessageCaption(
+                `
+                *• Help •*
+━━━━━━━━━━━━━━━━━━
 
-            userState[chatId] = {
-                state: 'HELP',
-                messageId: query.message.message_id,
-            };
+You can use the bot feature by using this command:
+/start - Start the bot
+/add - Add a new host, example /add MyHost 1.1.1.1
+/remove - Remove a host, example /remove MyHost
+/host - View the host list
+/help - View the help message
+                `,
+                {
+                    chat_id: chatId,
+                    message_id: query.message.message_id,
+                    parse_mode: 'Markdown',
+                    reply_markup: {
+                        inline_keyboard: defaultButton,
+                    },
+                },
+            );
+            bot.answerCallbackQuery(query.id);
             break;
         }
         case 'writeHost': {
