@@ -5,23 +5,19 @@ const utils = require('./utils');
 const path = require('path');
 
 const bot = new TeleBot(process.env.TOKEN, { polling: true });
-const userState = {};
+let userState = {};
+try {
+    const userStateFile = fs.readFileSync('./database/userState.json');
+    userState = JSON.parse(userStateFile);
+} catch (error) {
+    console.log('No existing userState found. Starting with an empty state.');
+}
 
 const defaultButton = [
     [
         {
-            text: 'Add Host',
-            callback_data: 'addHosts',
-        },
-        {
             text: 'Host List',
             callback_data: 'hostList',
-        },
-    ],
-    [
-        {
-            text: 'Remove Host',
-            callback_data: 'removeHosts',
         },
         {
             text: 'Help',
@@ -29,81 +25,51 @@ const defaultButton = [
         },
     ],
 ];
-const hostFilePath = path.join(__dirname, 'database', 'users.json');
 
-function getTotalPage(username) {
-    let users = JSON.parse(fs.readFileSync(hostFilePath));
-    let hosts = users[username]['hostList'];
-    return Math.ceil(hosts.length / 5);
-}
-
-function getHostsPage(username, page) {
-    let users = JSON.parse(fs.readFileSync(hostFilePath));
-    let hosts = users[username]['hostList'];
-    return hosts.slice(page * 5, (page + 1) * 5);
-}
-
+/**
+ * Creates default user data in the database if the user is not already registered.
+ * @param {string} username - The username of the user.
+ * @param {number} chatId - The chat ID of the user.
+ */
 function defaultUsersData(username, chatId) {
+    // Read the database file
     const databaseFile = fs.readFileSync('./database/users.json');
 
+    // Parse the database file into an object
     let users = JSON.parse(databaseFile);
 
+    // Check if the user is already registered
     if (!users[username]) {
+        // If not, create default user data
         users[username] = {
             chatId: chatId,
             hostList: [],
         };
 
+        // Write the updated user data back to the database file
         fs.writeFileSync('./database/users.json', JSON.stringify(users));
     } else {
-        return;
+        // If the user is already registered, do nothing
+        // (Uncomment the line below to send a message to the user)
         // bot.sendMessage(chatId, "You're already registered.");
     }
 }
 
-bot.onText(/\/test/, msg => {
-    const chatId = msg.chat.id;
+/**
+ * Saves the user state to the userState.json file.
+ *
+ * This function reads the userState object, converts it to a JSON string,
+ * and writes it to the userState.json file. The userState object contains
+ * the state of the bot for each user, including their message ID, state,
+ * and any other relevant data.
+ */
+function saveUserState() {
+    // Convert the userState object to a JSON string
+    const userStateJSON = JSON.stringify(userState);
 
-    bot.sendPhoto(chatId, './assets/banner.png', {
-        caption: `
-        *• Welcome ${msg.from.username} •*
-━━━━━━━━━━━━━━━━━━
-
-You can now use the bot feature by clicking the button below.
-
-━━━━━━━━━━━━━━━━━━
-`,
-        parse_mode: 'Markdown',
-        reply_markup: {
-            inline_keyboard: [
-                [
-                    {
-                        text: 'Add Host',
-                        callback_data: 'addHosts',
-                    },
-                    {
-                        text: 'Host List',
-                        callback_data: 'hostList',
-                    },
-                ],
-                [
-                    {
-                        text: 'Remove Host',
-                        callback_data: 'removeHosts',
-                    },
-                    {
-                        text: 'Help',
-                        callback_data: 'null',
-                    },
-                    {
-                        text: 'Help',
-                        callback_data: 'help',
-                    },
-                ],
-            ],
-        },
-    });
-});
+    // Write the JSON string to the userState.json file
+    fs.writeFileSync('./database/userState.json', userStateJSON);
+}
 
 bot.onText(/\/start/, msg => {
     const chatId = msg.chat.id;
@@ -154,17 +120,121 @@ You can now use the bot feature by clicking the button below.
     }
 });
 
+bot.onText(/\/add/, msg => {
+    const chatId = msg.chat.id;
+    const [command, hostName, hostAddress] = msg.text.split(' ');
+
+    if (hostName === undefined || hostAddress === undefined) {
+        return bot.sendMessage(
+            chatId,
+            'Please enter the host name and address.',
+        );
+    }
+
+    const databaseFile = fs.readFileSync('./database/users.json');
+
+    let users = JSON.parse(databaseFile);
+
+    // Check if the host already exists
+    if (utils.isHostExist(hostName)) {
+        return bot.sendMessage(chatId, 'Host already exists.');
+    } else if (users[msg.from.username].hostList.includes(hostName)) {
+        return bot.sendMessage(
+            chatId,
+            'You already have a host with the same name.',
+        );
+    }
+
+    // Add confirmation message using userState
+    userState[chatId] = {
+        state: 'WAITING_HOST_CONFIRMATION',
+        data: {
+            hostName: hostName,
+            hostAddress: hostAddress,
+        },
+    };
+    saveUserState();
+
+    bot.sendPhoto(chatId, './assets/banner.png', {
+        caption: `
+            *• Add Host •*
+━━━━━━━━━━━━━━━━━━
+
+Host Name: ${userState[chatId].data.hostName}
+Host Address: \`\`\`php
+${utils.generateHostData(userState[chatId].data.hostAddress)}\`\`\`
+
+━━━━━━━━━━━━━━━━━━
+
+Do you want to add this host?`,
+        parse_mode: 'Markdown',
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    {
+                        text: 'Yes',
+                        callback_data: 'writeHost',
+                    },
+                    {
+                        text: 'No',
+                        callback_data: 'cancel',
+                    },
+                ],
+            ],
+        },
+    });
+});
+
+bot.onText(/\/remove/, msg => {
+    const chatId = msg.chat.id;
+
+    if (utils.isHostOnUser(msg.from.username, msg.text)) {
+        bot.sendPhoto(chatId, './assets/banner.png', {
+            caption: `
+            *• Remove Host •*
+━━━━━━━━━━━━━━━━━━
+
+Host Name: ${msg.text}
+
+━━━━━━━━━━━━━━━━━━
+
+Do you want to remove this host?`,
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        {
+                            text: 'Yes',
+                            callback_data: 'removeHost',
+                        },
+                        {
+                            text: 'No',
+                            callback_data: 'cancel',
+                        },
+                    ],
+                ],
+            },
+        });
+    } else {
+        return bot.sendPhoto(chatId, './assets/banner.png', {
+            caption: `Host are not on your list, check again using button below.`,
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: defaultButton,
+            },
+        });
+    }
+});
+
+// TODO: Removing unsused callback_data
 bot.on('message', msg => {
     const chatId = msg.chat.id;
 
-    if (userState[chatId] && userState[chatId].state === 'HELP') {
-        bot.sendMessage(chatId, 'Help Message');
+    // Logger for messages
+    const logMessage = `[MSG] ${msg.from.username} (${msg.from.id}): ${msg.text}`;
+    console.log(logMessage);
 
-        delete userState[chatId];
-    } else if (
-        userState[chatId] &&
-        userState[chatId].state === 'WAITING_HOST_NAME'
-    ) {
+    if (userState[chatId] && userState[chatId].state === 'WAITING_HOST_NAME') {
         // Add filter for the host name, only allow alphanumeric characters and -
         if (msg.text.match(/[^a-zA-Z0-9-]/)) {
             return bot.sendMessage(
@@ -176,14 +246,16 @@ bot.on('message', msg => {
         const databaseFile = fs.readFileSync('./database/users.json');
 
         let users = JSON.parse(databaseFile);
+        let hostName = msg.text;
+        console.log(hostName);
 
         // Check if the host already exists
-        if (utils.isHostExist(msg.text)) {
-            bot.sendMessage(
+        if (utils.isHostExist(hostName)) {
+            return bot.sendMessage(
                 chatId,
                 'Host already exists, please use another name.',
             );
-        } else if (users[msg.from.username].hostList.includes(msg.text)) {
+        } else if (users[msg.from.username].hostList.includes(hostName)) {
             return bot.sendMessage(
                 chatId,
                 'You already have a host with the same name.',
@@ -195,9 +267,10 @@ bot.on('message', msg => {
             state: 'WAITING_HOST_ADDRESS',
             messageId: userState[chatId].messageId,
             data: {
-                hostName: msg.text,
+                hostName: hostName,
             },
         };
+        saveUserState();
 
         bot.editMessageCaption(
             `
@@ -289,12 +362,22 @@ You can use the bot feature by clicking the button below.
         );
 
         delete userState[chatId];
+        saveUserState();
+    } else if (
+        userState[chatId] &&
+        userState[chatId].state === 'WAITING_HOST_CONFIRMATION'
+    ) {
+        console.log(userState[chatId].data);
     }
 });
 
 bot.on('callback_query', query => {
     const [action, ...args] = query.data.split('_');
     const chatId = query.message.chat.id;
+
+    // Logger for buttons callback
+    const logButton = `[BTN] ${query.from.username} (${query.from.id}): ${query.data}`;
+    console.log(logButton);
 
     switch (action) {
         case 'addHosts': {
@@ -328,6 +411,7 @@ Please enter the host name you want to add.
                 state: 'WAITING_HOST_NAME',
                 messageId: query.message.message_id,
             };
+            saveUserState();
 
             bot.answerCallbackQuery(query.id, {
                 text: 'Please enter the name of the host you want to add.',
@@ -345,7 +429,7 @@ Please enter the host name you want to add.
                 newPage += 1;
             }
 
-            let message = 'Hosts: \n\n';
+            let message = `Hosts: Page (${newPage + 1} / ${totalPages + 1})\n`;
 
             if (newPage !== Number(page)) {
                 const hosts = utils.getHostOnPage(query.from.username, newPage);
@@ -355,18 +439,14 @@ Please enter the host name you want to add.
                 });
             }
 
-            message += `Last updated: ${new Date().toLocaleString()}`;
-
             bot.editMessageCaption(
                 `
-            *• Host List •*
+                *• Host List •*
 ━━━━━━━━━━━━━━━━━━
 
 ${message}
 
-━━━━━━━━━━━━━━━━━━
-            
-            Page ${newPage + 1} of ${totalPages}`,
+━━━━━━━━━━━━━━━━━━`,
                 {
                     chat_id: chatId,
                     message_id: query.message.message_id,
@@ -375,16 +455,22 @@ ${message}
                         inline_keyboard: [
                             [
                                 {
-                                    text: 'Next',
-                                    callback_data: `host_next_${newPage}`,
+                                    text: 'Prev',
+                                    callback_data:
+                                        newPage > 0
+                                            ? `host_prev_${newPage}`
+                                            : 'null',
                                 },
                                 {
                                     text: 'Page: ' + (newPage + 1),
                                     callback_data: 'null',
                                 },
                                 {
-                                    text: 'Previous',
-                                    callback_data: `host_prev_${newPage}`,
+                                    text: 'Next',
+                                    callback_data:
+                                        newPage < totalPages - 1
+                                            ? `host_next_${newPage}`
+                                            : 'null',
                                 },
                             ],
                             [
@@ -403,13 +489,14 @@ ${message}
         case 'hostList': {
             const page = 0;
             const hosts = utils.getHostOnPage(query.from.username, page);
-            let message = 'Hosts: \n\n';
+            const totalPages = utils.getHostTotalPage(query.from.username);
+            let message = `Hosts: Page (${page + 1} / ${totalPages + 1})\n`;
 
             hosts.forEach((host, index) => {
                 message += `${index + 1}. ${host}.txt\n`;
             });
 
-            message += `Last updated: ${new Date().toLocaleString()}`;
+            // message += `Last updated: ${new Date().toLocaleString()}`;
 
             bot.editMessageCaption(
                 `
@@ -428,16 +515,16 @@ ${message}
                         inline_keyboard: [
                             [
                                 {
-                                    text: 'Next',
-                                    callback_data: `host_next_${page}`,
+                                    text: 'Prev',
+                                    callback_data: `host_prev_${page}`,
                                 },
                                 {
                                     text: 'Page: ' + (page + 1),
                                     callback_data: 'null',
                                 },
                                 {
-                                    text: 'Previous',
-                                    callback_data: `host_prev_${page}`,
+                                    text: 'Next',
+                                    callback_data: `host_next_${page}`,
                                 },
                             ],
                             [
@@ -453,10 +540,6 @@ ${message}
 
             break;
         }
-        case 'removeHosts': {
-            bot.sendMessage(chatId, 'Remove Hosts');
-            break;
-        }
         case 'help': {
             bot.sendMessage(chatId, 'Help');
 
@@ -464,6 +547,21 @@ ${message}
                 state: 'HELP',
                 messageId: query.message.message_id,
             };
+            break;
+        }
+        case 'writeHost': {
+            const hostData = userState[chatId].data;
+            const username = query.from.username;
+
+            const writeHost = utils.writeHostsFile(
+                username,
+                hostData.hostName,
+                hostData.hostAddress,
+            );
+
+            bot.sendMessage(chatId, writeHost);
+
+            bot.answerCallbackQuery(query.id);
             break;
         }
         case 'cancel': {
