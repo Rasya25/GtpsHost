@@ -240,7 +240,6 @@ Do you want to remove this host?`,
     saveUserState();
 });
 
-// TODO: Removing unsused callback_data
 bot.on('message', msg => {
     const chatId = msg.chat.id;
 
