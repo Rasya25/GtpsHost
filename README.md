@@ -51,7 +51,7 @@ After setting up the project, you can interact with the bot on Telegram to manag
 GET /hosts/:hostName
 # Example: localhost:3000/hosts/GracePS.txt
 
-```sh
+```
 
 ## Contributing
 
