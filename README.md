@@ -45,7 +45,13 @@ node index.js
 
 ## Usage
 
-After setting up the project, you can interact with the bot on Telegram to manage your Growtopia server hosts. The bot supports various commands for adding, listing, and removing hosts.
+After setting up the project, you can interact with the bot on Telegram to manage your Growtopia server hosts. The bot supports various commands for adding, listing, and removing hosts. And for the web server you can access it by visiting `http://localhost:3000`. and this is the endpoints:
+
+````sh
+GET /hosts/:hostName
+# Example: localhost:3000/hosts/GracePS.txt
+
+```sh
 
 ## Contributing
 
@@ -63,3 +69,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Contact
 
 If you have any questions or concerns, feel free to contact me on Telegram: [@YoruAkio](https://t.me/YoruAkio) or email me at [YoruAkio](mailto:yoruakio@proton.me).
+````
