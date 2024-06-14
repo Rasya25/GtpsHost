@@ -69,7 +69,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Contact
 
 If you have any questions or concerns, feel free to contact me on Telegram: [@YoruAkio](https://t.me/YoruAkio) or email me at [YoruAkio](mailto:yoruakio@proton.me).
-
-```
-
-```
