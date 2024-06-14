@@ -33,10 +33,7 @@ const defaultButton = [
  */
 function defaultUsersData(username, chatId) {
     // Read the database file
-    const databaseFile = fs.readFileSync('./database/users.json');
-
-    // Parse the database file into an object
-    let users = JSON.parse(databaseFile);
+    const users = JSON.parse(fs.readFileSync('./database/users.json', 'utf-8'));
 
     // Check if the user is already registered
     if (!users[username]) {
@@ -47,11 +44,10 @@ function defaultUsersData(username, chatId) {
         };
 
         // Write the updated user data back to the database file
-        fs.writeFileSync('./database/users.json', JSON.stringify(users));
-    } else {
-        // If the user is already registered, do nothing
-        // (Uncomment the line below to send a message to the user)
-        // bot.sendMessage(chatId, "You're already registered.");
+        fs.writeFileSync(
+            './database/users.json',
+            JSON.stringify(users, null, 2),
+        );
     }
 }
 
