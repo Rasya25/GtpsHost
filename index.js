@@ -385,44 +385,6 @@ bot.on('callback_query', query => {
     console.log(logButton);
 
     switch (action) {
-        case 'addHosts': {
-            bot.editMessageCaption(
-                `
-                *• Add Host •*
-━━━━━━━━━━━━━━━━━━
-
-Please enter the host name you want to add.
-
-━━━━━━━━━━━━━━━━━━
-                `,
-                {
-                    chat_id: chatId,
-                    message_id: query.message.message_id,
-                    parse_mode: 'Markdown',
-                    reply_markup: {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: 'Cancel',
-                                    callback_data: 'cancel',
-                                },
-                            ],
-                        ],
-                    },
-                },
-            );
-
-            userState[chatId] = {
-                state: 'WAITING_HOST_NAME',
-                messageId: query.message.message_id,
-            };
-            saveUserState();
-
-            bot.answerCallbackQuery(query.id, {
-                text: 'Please enter the name of the host you want to add.',
-            });
-            break;
-        }
         case 'removeHost': {
             const hostName = userState[chatId].data.hostName;
 
