@@ -66,11 +66,14 @@ function saveUserState() {
     );
 }
 
+// Handle the '/start' command, which is used to start the bot
 bot.onText(/\/start/, msg => {
+    // Get the chat ID from the message
     const chatId = msg.chat.id;
 
     // Check if the user has a username
     if (msg.from.username === undefined) {
+        // If the user does not have a username, send a message asking them to set it
         return bot.sendMessage(
             chatId,
             'Please set your username to use this bot.',
@@ -79,8 +82,10 @@ bot.onText(/\/start/, msg => {
 
     // Check if the user is already registered
     if (!utils.isUserExist(msg.from.username)) {
+        // If the user is not registered, create default user data in the database
         defaultUsersData(msg.from.username, msg.chat.id);
 
+        // Send a welcome message to the user, along with a button to access the bot features
         bot.sendPhoto(chatId, './assets/banner.png', {
             caption: `
         *• Welcome ${msg.from.username} •*
@@ -98,6 +103,7 @@ You can now use the bot feature by clicking the button below.
             },
         });
     } else {
+        // If the user is already registered, send a message asking them to access the bot features
         bot.sendPhoto(chatId, './assets/banner.png', {
             caption: `
         *• Welcome ${msg.from.username} •*
@@ -115,25 +121,32 @@ You can now use the bot feature by clicking the button below.
     }
 });
 
+// Handle the '/add' command for adding a new host
 bot.onText(/\/add/, async msg => {
+    // Get the chat ID and split the command and host name and address
     const chatId = msg.chat.id;
     const [command, hostName, hostAddress] = msg.text.split(' ');
 
+    // Check if the host name and address are provided
     if (hostName === undefined || hostAddress === undefined) {
+        // If not, send a message to the user to enter the host name and address
         return bot.sendMessage(
             chatId,
             'Please enter the host name and address.',
         );
     }
 
+    // Read the users.json file and parse it as JSON
     const users = JSON.parse(
         await fs.promises.readFile('./database/users.json', 'utf-8'),
     );
 
     // Check if the host already exists
     if (utils.isHostExist(hostName)) {
+        // If it does, send a message to the user
         return bot.sendMessage(chatId, 'Host already exists.');
     } else if (users[msg.from.username]?.hostList?.includes(hostName)) {
+        // If the user already has a host with the same name, send a message to the user
         return bot.sendMessage(
             chatId,
             'You already have a host with the same name.',
@@ -150,6 +163,7 @@ bot.onText(/\/add/, async msg => {
     };
     saveUserState();
 
+    // Send a message to the user with the host name and address
     bot.sendPhoto(chatId, './assets/banner.png', {
         caption: `
             *• Add Host •*
@@ -180,12 +194,17 @@ Do you want to add this host?`,
     });
 });
 
+// Handle the '/remove' command which is used to remove a host
 bot.onText(/\/remove/, async msg => {
+    // Split the command and host name from the message text
     const [command, hostName] = msg.text.split(' ');
+    // Get the chat ID from the message
     const chatId = msg.chat.id;
 
+    // Check if the host is on the user's list
     const isHostOnUser = await utils.isHostOnUser(msg.from.username, hostName);
 
+    // If the host is not on the user's list, send a message with the host name and an error message
     if (!isHostOnUser) {
         return bot.sendPhoto(chatId, './assets/banner.png', {
             caption: `
@@ -204,6 +223,7 @@ Host are not on your list, check again using button below.`,
         });
     }
 
+    // Send a message to the user with the host name and an option to remove the host
     bot.sendPhoto(chatId, './assets/banner.png', {
         caption: `
             *• Remove Host •*
@@ -231,12 +251,14 @@ Do you want to remove this host?`,
         },
     });
 
+    // Update the user state to indicate that the user is waiting for a host removal confirmation
     userState[chatId] = {
         state: 'WAITING_HOST_REMOVE',
         data: {
             hostName: hostName,
         },
     };
+    // Save the updated user state
     saveUserState();
 });
 
