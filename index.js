@@ -262,6 +262,33 @@ Do you want to remove this host?`,
     saveUserState();
 });
 
+// This code block handles the '/list' command.
+bot.onText(/\/list/, msg => {
+    const chatId = msg.chat.id; // Get the chat ID from the message.
+
+    if (!utils.isUserRegistered(msg.from.username)) {
+        // Check if the user is registered.
+        return bot.sendMessage(chatId, 'Please register first.'); // If not, send a message asking them to register.
+    }
+
+    bot.sendPhoto(chatId, './assets/banner.png', {
+        caption: '*• Host List •*', // Set the caption of the message to 'Host List'.
+        parse_mode: 'Markdown', // Set the parse mode of the message to Markdown.
+        reply_markup: {
+            // Set the reply markup of the message to an inline keyboard.
+            inline_keyboard: [
+                // Set the inline keyboard to a single button.
+                [
+                    {
+                        text: 'Host List', // Set the text of the button to 'Host List'.
+                        callback_data: 'hostList', // Set the callback data of the button to 'hostList'.
+                    },
+                ],
+            ],
+        },
+    });
+});
+
 bot.on('message', msg => {
     const chatId = msg.chat.id;
 
@@ -470,7 +497,7 @@ You can use the bot feature by using this command:
 /start - Start the bot
 /add - Add a new host, example /add MyHost 1.1.1.1
 /remove - Remove a host, example /remove MyHost
-/host - View the host list
+/list - View the host list
 /help - View the help message
                 `,
                 {
