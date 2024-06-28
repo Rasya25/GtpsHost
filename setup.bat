@@ -11,6 +11,7 @@ copy example.env .env
 REM Make folder database, and file users.json and userState.json inside it
 mkdir database
 cd database
+mkdir hosts
 echo {} > users.json
 echo {} > userState.json
 cd ..

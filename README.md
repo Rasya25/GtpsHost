@@ -1,6 +1,6 @@
-# GTPSHost
+# GtpsHost
 
-GTPSHost is a Telegram Bot + WebServer designed for hosting Growtopia Private Server hosts. It allows users to manage their Growtopia server hosts directly through Telegram, offering a convenient and efficient way to handle server administration.
+GtpsHost is a Telegram Bot + WebServer designed for hosting Growtopia Private Server hosts. It allows users to manage their Growtopia server hosts directly through Telegram, offering a convenient and efficient way to handle server administration.
 
 ## Features
 
@@ -10,18 +10,18 @@ GTPSHost is a Telegram Bot + WebServer designed for hosting Growtopia Private Se
 
 ## Installation
 
-To get started with GTPSHost, follow these steps:
+To get started with GtpsHost, follow these steps:
 
 1. Clone the repository:
 
 ```sh
-git clone https://github.com/YoruAkio/GTPSHost.git
+git clone https://github.com/Rasya25/GtpsHost.git
 ```
 
 2. Navigate to the project directory:
 
 ```sh
-cd GTPSHost
+cd GtpsHost
 ```
 
 3. Install the necessary dependencies:
@@ -29,7 +29,10 @@ cd GTPSHost
 ```sh
 npm install
 ```
-
+or
+```sh
+bash setup.sh
+```
 4. Edit `example.env` and rename it to `.env`:
 
 ```sh
@@ -63,9 +66,9 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Acknowledgements
 
--   Special thanks to [YoruAkio](https://github.com/YoruAkio) for creating and maintaining this project.
+-   Author : [Rasya](https://github.com/Rasya25) for creating and maintaining this project.
 -   Inspired by [GTPS.FUN](https://t.me/GTPSHostMaker_bot) GTPS Host Maker Bot by RvLnd and Molk4.
 
 ## Contact
 
-If you have any questions or concerns, feel free to contact me on Telegram: [@YoruAkio](https://t.me/YoruAkio) or email me at [YoruAkio](mailto:yoruakio@proton.me).
+If you have any questions or concerns, feel free to contact me on WhatsApp: [@chocopydevs](https://wa.me/6285791346128) or email me at [YoruAkio](mailto:contact@rasyafs.me).

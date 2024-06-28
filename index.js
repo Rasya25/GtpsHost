@@ -1,3 +1,8 @@
+/**
+ * (c) 2024 Rasya R - All right reversed
+ * MIT License Rasya R.
+ */
+
 require('dotenv').config();
 const TeleBot = require('node-telegram-bot-api');
 const fs = require('fs');
@@ -516,12 +521,15 @@ You can use the bot feature by using this command:
             const hostData = userState[chatId].data;
             const username = query.from.username;
 
+            console.log("Username:", username);
             const writeHost = utils.writeHostsFile(
                 username,
                 hostData.hostName,
                 hostData.hostAddress,
             );
-
+            
+            console.log("Mencoba menulis ke file:", path.resolve('./database/hosts/sss.txt'));
+            // ... panggilan writeFileSync Anda
             bot.sendMessage(chatId, writeHost);
 
             bot.answerCallbackQuery(query.id);

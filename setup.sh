@@ -12,6 +12,7 @@ cp example.env .env
 mkdir database
 echo '{}' > database/users.json
 echo '{}' > database/userState.json
+echo '{}' > database/hosts
 
 # Start the bot
 node index.js

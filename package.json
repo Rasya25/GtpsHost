@@ -1,6 +1,6 @@
 {
   "name": "gtpshost",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Telegram Bot + WebServer that hosting Growtopia Private Server host.",
   "main": "index.js",
   "scripts": {
@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/YoruAkio/GTPSHost.git"
+    "url": "git+https://github.com/Rasya25/GtpsHost.git"
   },
-  "author": "YoruAkio <yoruakio@proton.me>",
+  "author": "Rasya R. - @chocopydevs",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/YoruAkio/GTPSHost/issues"
+    "url": "https://github.com/Rasya25/GtpsHost/issues"
   },
-  "homepage": "https://github.com/YoruAkio/GTPSHost#readme",
+  "homepage": "https://github.com/Rasya25GtpsHost#readme",
   "dependencies": {
     "dotenv": "^16.4.5",
     "express": "^4.19.2",

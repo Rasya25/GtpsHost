@@ -1,3 +1,8 @@
+/**
+ * (c) 2024 Rasya R - All right reversed
+ * MIT License Rasya R.
+ */
+
 const fs = require('fs');
 const path = require('path');
 const databaseFile = fs.readFileSync('./database/users.json');
@@ -11,10 +16,10 @@ delete require.cache[require.resolve('./database/users.json')];
  * @return {boolean} Returns true if the user exists, false otherwise.
  */
 function isUserExist(username) {
-    // Parse the database file and store it in the users variable
+   
     let users = JSON.parse(databaseFile);
 
-    // Check if the user exists in the database
+   
     if (users[username]) {
         return true;
     } else {
@@ -109,7 +114,7 @@ function getHostOnPage(username, page) {
 function generateHostData(hostAddress) {
     // Construct the host data string with the given host address
     // and the various host names.
-    const hostData = `${hostAddress} www.growtopia1.com\n${hostAddress} www.growtopia2.com\n${hostAddress} growtopia1.com\n${hostAddress} growtopia2.com\n${hostAddress} YoruAkio`;
+    const hostData = `${hostAddress} www.growtopia1.com\n${hostAddress} www.growtopia2.com\n${hostAddress} growtopia1.com\n${hostAddress} growtopia2.com\n${hostAddress} Chocopy`;
 
     return hostData;
 }
