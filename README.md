@@ -71,4 +71,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Contact
 
-If you have any questions or concerns, feel free to contact me on WhatsApp: [@chocopydevs](https://wa.me/6285791346128) or email me at [YoruAkio](mailto:contact@rasyafs.me).
+If you have any questions or concerns, feel free to contact me on WhatsApp: [@chocopydevs](https://wa.me/6285791346128) or email me at [Rasya](mailto:contact@rasyafs.me).
